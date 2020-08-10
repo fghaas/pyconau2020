@@ -11,6 +11,7 @@ Reveal.initialize({
 
     transition: 'fade',
 
+    totalTime: 23*60,
 
     menu: {
         themes: false,
@@ -19,10 +20,6 @@ Reveal.initialize({
         openSlideNumber: true,
         markers: true
     },
-
-
-
-
 
     // Optional libraries used to extend on reveal.js
     dependencies: [
