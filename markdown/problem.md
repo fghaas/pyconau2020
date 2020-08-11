@@ -128,7 +128,7 @@ With HAProxy however, there's a different reason you will see this
 error.
 
 
-# Distilling the timeout problem
+## Distilling the problem
 
 <!-- Note -->
 If you have access to `manage.py shell` for your Django application,
@@ -137,6 +137,8 @@ default configuration. All you have to do is create an object from a
 model, so that it fetches data from the database, then wait a bit,
 then try to re-fetch. Like so:
 
+
+## manage.py shell <!-- .element class="hidden" -->
 
 ```python-doctest
 ./manage.py shell
@@ -171,10 +173,8 @@ So what happens here?
 * And then, `refresh_from_db()` breaks immediately with the 2013
   error.
 
-Note that if I run `refresh_from_db()` — or any other operation that
-touches the database – **again**, I get a different error (2016,
-expected at this point), but I don’t get my database connection back:
 
+## refresh_from_db() <!-- .element class="hidden" -->
 
 ```python-doctest
 >>> me.refresh_from_db()
@@ -184,8 +184,12 @@ OperationalError: (2006, 'MySQL server has gone away')
 ```
 
 <!-- Note -->
-What I have to do instead is *close* my `connection` first:
+Note that if I run `refresh_from_db()` — or any other operation that
+touches the database – **again**, I get a different error (2016,
+expected at this point), but I don’t get my database connection back:
 
+
+## connection.close() <!-- .element class="hidden" -->
 
 ```python-doctest
 >>> from django.db import connection
@@ -193,13 +197,77 @@ What I have to do instead is *close* my `connection` first:
 ```
 
 <!-- Note -->
-... and then, when I run anything else that requires a database query,
-Django will happily reconnect for me.
+What I have to do instead is *close* my `connection` first.
 
+
+## refresh_from_db() again <!-- .element class="hidden" -->
 
 ```python-doctest
 >>> me.refresh_from_db()
 ```
+
+<!-- Note -->
+And then, when I run anything else that requires a database query,
+Django will happily reconnect for me.
+
+At this stage, I can't just *read* from my object again, I can also
+*write* to it (by making a call to the object's `save()` method, for
+example.
+
+
+## So where does this come from?
+
+<!-- Note -->
+So where does this unintuitive behavior come from? What is it that
+makes my Django application suddenly lose its session? And why can I
+keep a session idle for 40 seconds between database interactions and
+nothing breaks, but if I try for 55 seconds things blow up?
+
+
+## HAproxy timeout settings <!-- .element class="hidden" -->
+
+| Config value | Default |
+| --- | --- |
+| `timeout connect` | *5s* <!-- .element class="fragment" --> | 
+|  `timeout check` | *5s* <!-- .element class="fragment" --> |
+| `timeout server` | *50s* <!-- .element class="fragment" --> | 
+| `timeout client` | *50s* <!-- .element class="fragment" --> |
+
+<!-- Note -->
+Well I did tell you it had to do with HAProxy. An HAProxy service
+sets four different **timeout** values:
+
+* `timeout connect`: the time in which a backend server must accept a
+  TCP connection, default 5s.
+* `timeout check`: the time in which a backend server must respond to
+  a recurring health check, default 5s.
+* `timeout server`: how long the server is allowed to take before it
+  answers a request, default 50s.
+* `timeout client`: how long the client is allowed to take before it
+  sends the next request, default 50s.
+
+And the reason you run into this problem *only* with HAproxy and not
+with a standalone MySQL server, or a Galera cluster using, say,
+`keepalived` HA, is this:
+
+
+## MySQL wait_timeout vs HAProxy timeout client <!-- .element class="hidden" -->
+
+HAproxy `timeout client`: 50s
+
+MySQL `wait_timeout`: 28800s 
+
+<!-- Note -->
+MySQL's `wait_timeout` — the maximum length of a client session as
+enforced by the MySQL server itself — is a whopping **8 hours**. It’s
+practically impossible to have any operation in a Django app that
+takes that long. So you’ll practically never run into that.
+
+50 seconds though, before the intervening HAproxy calls it quits? If,
+say, your Celery tasks makes a series of REST API calls to other
+systems and they all take a few seconds, or perhaps it does an object
+upload into S3 or something like that, 50 seconds is totally not
+unheard of.
 
 
 # HAProxy timeouts getting in the way of your Celery tasks
@@ -331,6 +399,7 @@ class ComplexOperation(Task)
      thing.save()
 ```
 
+
 ## Catch OperationalErrors
 
 <!-- Note -->
@@ -348,14 +417,15 @@ class ComplexOperation(Task)
    
    def run(self, **kwargs):
      thing = Thing.objects.get(pk=kwargs['pk'])
-     # Right here (after the query is complete) is where HAproxy starts its
-     # timeout clock
+     # Right here (after the query is complete) 
+	 # is where HAproxy starts its timeout clock
 
      # Suppose this takes 60 seconds.
      do_something_really_long_and_complicated()
 
-     # Then by the time we get here, HAProxy has torn down the connection,
-     # and we get a 2013 error, which we’ll want to catch.
+     # Then by the time we get here, HAProxy has 
+	 # torn down the connection, and we get a 2013 
+	 # error, which we’ll want to catch.
      try:
        thing.save()
      except OperationalError:
@@ -380,6 +450,72 @@ conveniently provide all those things, plus the reconnect, without
 cluttering your code too much.
 
 
+## Tenacity example (1) <!-- .element class="hidden" -->
+
+```python
+from django.db import connection, transaction
+from django.db.utils import OperationalError
+from model import Thing
+import tenacity
+import logging
+
+logging = logging.getLogger('__name__')
+
+def close_connection_on_retry(retry_state):
+    """Simple wrapper that accepts retry_state as a parameter,
+    so that it can be used as a retry callback."""
+    connection.close()
+```
+
+<!-- Note -->
+So all you need to do is add a few imports from tenacity and a little
+wrapper method around `connection.close()`,...
+
+
+## Tenacity example (2) <!-- .element class="hidden" -->
+
+```python
+class ComplexOperation(Task)
+   """Task that does very complex things"""
+   
+   @tenacity.retry(retry=tenacity.retry_if_exception_type(OperationalError),
+                   stop=tenacity.stop_after_attempt(3),
+                   wait=tenacity.wait_exponential(),
+                   after=close_connection_on_retry,
+                   before_sleep=tenacity.before_sleep_log(logger, 
+		                                                  logging.WARNING),
+                   reraise=True)
+    @transaction.atomic
+	def save(self, thing):
+		thing.save()
+```
+
+<!-- Note -->
+So what this does is if you ever do run into an OperationalError, the
+transaction will be rolled back (that’s what the `atomic` decorator
+does), and then retried (`retry`).
+
+And what’s nice is that you don’t have to write your own code for
+exponential backoff, or a loop for stopping after three retries, or
+for throwing the `OperationalError` up the stack if it does occur
+three times, or for formatting a nice log message. Tenacity does all
+of that for you.
+
+
+## Tenacity example (3) <!-- .element class="hidden" -->
+
+```python
+   def run(self, **kwargs):
+     thing = Thing.objects.get(pk=kwargs['pk'])
+     do_something_really_long_and_complicated()
+	 self.save(thing)
+```
+
+<!-- Note -->
+And then once you’ve wrapped everything in those two decorators, a
+rather robust database update call becomes very easy.
+
+
 # Fixing this in infrastructure
 
 <!-- Note -->
@@ -390,11 +526,13 @@ long-running codepaths between database queries, and sprinkling
 `connection.close()` statements around.
 
 In that case, you can fix your HAProxy configuration instead. Again,
-the variables you’ll want to set are
+the variables you’ll want to set are...
 
 
-* `timeout server` and 
-* `timeout client`.
+## HAproxy settings <!-- .element class="hidden" -->
+
+* `timeout server`
+* `timeout client`
 
 <!-- Note -->
 You’ll probably want to set them to an identical value, which should
@@ -406,6 +544,14 @@ backend server’s `wait_timeout` configuration variable, [which
 defaults to 8
 hours](https://mariadb.com/kb/en/server-system-variables/#wait_timeout). 
 
+
+## Beware 
+
+MySQL time values use *seconds.*
+
+HAProxy uses *milliseconds* by default.
+
+<!-- Note -->
 Careful though, while MySQL interprets timeout settings in _seconds_
 by default, HAProxy [defaults to
 _milliseconds._](https://cbonte.github.io/haproxy-dconv/1.7/configuration.html#2.4)
@@ -414,9 +560,10 @@ You’d thus need to translate the `28800` default value for MySQL’s
 HAProxy, or else you set the HAProxy timeout to a value of `28800s`
 (or `8h`, if you prefer).
 
-* * * 
 
-Background research contribution credit for this post goes to my [City
+## Credits <!-- .element class="hidden" -->
+
+Background research contribution credit for this talk goes to my [City
 Network](https://www.citynetwork.eu/) colleagues [Elena
 Lindqvist](https://twitter.com/elenalindq) and [Phillip
 Dale](https://twitter.com/pdale_se), plus [Zane
@@ -424,17 +571,3 @@ Bitter](https://twitter.com/zerobanana) for the tenacity suggestion.
 
 Also, thanks to [Murat Koç](https://twitter.com/muratkochane) for
 suggesting to clarify the supported time formats in HAProxy.
-
-
- *that* service may be your culprit. An HAProxy
-service sets four different **timeout** values:
-
-* `timeout connect`: the time in which a backend server must accept a
-  TCP connection, default 5s.
-* `timeout check`: the time in which a backend server must respond to
-  a recurring health check, default 5s.
-* `timeout server`: how long the server is allowed to take before it
-  answers a request, default 50s.
-* `timeout client`: how long the client is allowed to take before it
-  sends the next request, default 50s.
-
