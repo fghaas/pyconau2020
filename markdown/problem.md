@@ -91,7 +91,7 @@ option](https://galeracluster.com/library/documentation/ha-proxy.html)
 for Galera.
 
 So, a few months ago I ran exactly that sort of setup, for the first
-team (we'd previously been using MariaDB with Galera, but not with
+time (we'd previously been using MariaDB with Galera, but not with
 HAProxy), and we ran to some issues.
 
 
