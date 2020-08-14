@@ -287,7 +287,7 @@ class ComplexOperation(Task)
    
    def run(self, **kwargs):
      thing = Thing.objects.get(pk=kwargs['pk'])
-     do_something_really_long_and_complicated()
+     do_something_really_long_and_complicated(thing)
      thing.save()
 ```
 
@@ -339,7 +339,7 @@ class ComplexOperation(Task)
      # Suppose this takes 60 seconds (10 seconds longer than the default 
 	 # HAProxy timeout)
 	 
-     do_something_really_long_and_complicated()
+     do_something_really_long_and_complicated(thing)
 
      # Then by the time we get here, HAProxy has torn down the connection,
      # and we get a 2013 error.
@@ -393,7 +393,7 @@ class ComplexOperation(Task)
      connection.close()
 
      # Suppose this takes 60 seconds.
-     do_something_really_long_and_complicated()
+     do_something_really_long_and_complicated(thing)
 
      # Here, we just get a new connection.
      thing.save()
@@ -421,7 +421,7 @@ class ComplexOperation(Task)
 	 # is where HAproxy starts its timeout clock
 
      # Suppose this takes 60 seconds.
-     do_something_really_long_and_complicated()
+     do_something_really_long_and_complicated(thing)
 
      # Then by the time we get here, HAProxy has 
 	 # torn down the connection, and we get a 2013 
