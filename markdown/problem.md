@@ -212,7 +212,7 @@ Django will happily reconnect for me.
 
 At this stage, I can't just *read* from my object again, I can also
 *write* to it (by making a call to the object's `save()` method, for
-example.
+example).
 
 
 ## So where does this come from?
