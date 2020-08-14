@@ -162,14 +162,10 @@ So what happens here?
 
 * I open a session to the database with the `User.objects.get()` call
   that populates the `me` object.
-* Then I wait 40 seconds. That’s comfortably short of the 50-second
-  HAproxy timeout.
+* Then I wait 40 seconds.
 * Now when I run `me.refresh_from_db()`, the session is still alive
-  and the call completes without error. The timeout clock resets at
-  this stage, and I could keep going like this ad infinitum, as long
-  as I `sleep()` (or keep busy) for less than 50 seconds.
-* However, I next wait *55* seconds, causing HAProxy to terminate the
-  connection.
+  and the call completes without error.
+* However, I try this again, this time waiting waiting *55* seconds.
 * And then, `refresh_from_db()` breaks immediately with the 2013
   error.
 
