@@ -185,7 +185,7 @@ OperationalError: (2006, 'MySQL server has gone away')
 
 <!-- Note -->
 Note that if I run `refresh_from_db()` — or any other operation that
-touches the database – **again**, I get a different error (2016,
+touches the database – **again**, I get a different error (2006,
 expected at this point), but I don’t get my database connection back:
 
 
