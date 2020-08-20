@@ -99,7 +99,7 @@ time (we'd previously been using MariaDB with Galera, but not with
 HAProxy), and we ran to some issues.
 
 
-## OperationalError
+## OperationalError <!-- .element class="hidden" -->
 
 ```
 (2013, "Lost connection to MySQL server during query")
