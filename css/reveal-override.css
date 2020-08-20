@@ -16,6 +16,10 @@ body:after {
   display: none;
 }
 
+.reveal .hidden {
+  display: none;
+}
+
 .reveal .overview .hidden {
   display: inherit;
 }
@@ -26,6 +30,21 @@ body:after {
 
 .reveal iframe, .reveal img {
   border: none;
+}
+
+.reveal img, .reveal iframe {
+  border: none !important;
+}
+
+.reveal .inline {
+  display: inline !important;
+}
+
+.reveal img.inline {
+  box-shadow: none !important;
+  height: 1em;
+  width: auto;
+  margin: 0 !important;
 }
 
 .reveal .fragment .visible {
