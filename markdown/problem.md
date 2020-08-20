@@ -83,7 +83,8 @@ it's because the actual problem I'm about to describe is something
 else, as you'll see in a moment.
 
 
-## MySQL/Galera via HAProxy
+<!-- .slide: data-background-image="images/django-haproxy-galera.svg" data-background-size="contain" -->
+## MySQL/Galera via HAProxy <!-- .element class="hidden" -->
 
 <!-- Note -->
 Now, let’s inject another item into the setup. Suppose your
