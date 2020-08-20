@@ -342,16 +342,16 @@ class ComplexOperation(Task)
    def run(self, **kwargs):
      thing = Thing.objects.get(pk=kwargs['pk'])
      # Right here (after the query is complete) 
-	 # is where HAproxy starts its timeout clock
+     # is where HAproxy starts its timeout clock
 
      # Suppose this takes 60 seconds 
-	 # (10 seconds longer than the default 
-	 # HAProxy timeout)
-	 
+     # (10 seconds longer than the default 
+     # HAProxy timeout)
+     
      do_something_really_long_and_complicated(thing)
 
      # Then by the time we get here, HAProxy has torn 
-	 # down the connection, and we get a 2013 error.
+     # down the connection, and we get a 2013 error.
      thing.save()
 </code>
 </pre>
@@ -435,9 +435,9 @@ class ComplexOperation(Task)
        thing.save()
      except OperationalError:
        # It’s now necessary to disconnect 
-	   # (and reconnect automatically),
+       # (and reconnect automatically),
        # because if we don’t then all we do 
-	   # is turn a 2013 into a 2006.
+       # is turn a 2013 into a 2006.
        connection.close()
        thing.save()
 </code>
@@ -499,11 +499,11 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_ex
                    wait=wait_exponential(),
                    after=close_connection_on_retry,
                    before_sleep=before_sleep_log(logger, 
-		                                         logging.WARNING),
+                                                 logging.WARNING),
                    reraise=True)
     @transaction.atomic
-	def save(self, thing):
-		thing.save()
+    def save(self, thing):
+        thing.save()
 </code>
 </pre>
 
@@ -525,7 +525,7 @@ of that for you.
 <code class="python">def run(self, **kwargs):
      thing = Thing.objects.get(pk=kwargs['pk'])
      do_something_really_long_and_complicated()
-	 self.save(thing)
+     self.save(thing)
 </code>
 </pre>
 
