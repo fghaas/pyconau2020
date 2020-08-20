@@ -277,7 +277,7 @@ upload into S3 or something like that, 50 seconds is totally not
 unheard of.
 
 
-# HAProxy timeouts getting in the way of your Celery tasks
+## HAProxy timeouts getting in the way of your Celery tasks
 
 <!-- Note -->
 Now how does this relate to a real-world application? Suppose you have
