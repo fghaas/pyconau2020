@@ -589,3 +589,10 @@ Bitter](https://twitter.com/zerobanana) for the tenacity suggestion.
 
 Also, thanks to [Murat Koç](https://twitter.com/muratkochane) for
 suggesting to clarify the supported time formats in HAProxy.
+
+
+## QR code <!-- .element class="hidden" -->
+
+![QR code for slides](images/qr-slides.svg)
+
+https://fghaas.github.io/pyconau2020
