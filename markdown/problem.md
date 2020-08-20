@@ -464,7 +464,7 @@ cluttering your code too much.
 <code class="python">from django.db import connection, transaction
 from django.db.utils import OperationalError
 from model import Thing
-import tenacity
+from tenacity import retry
 import logging
 
 logging = logging.getLogger('__name__')
@@ -480,6 +480,13 @@ def close_connection_on_retry(retry_state):
 So all you need to do is add a few imports from tenacity and a little
 wrapper method around `connection.close()`,...
 
+*The `from tenacity import` line has been shortened to fit the
+slide. The proper, complete import would be:*
+
+```python
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential, before_sleep_log
+```
+
 
 ## Tenacity example (2) <!-- .element class="hidden" -->
 
@@ -487,12 +494,12 @@ wrapper method around `connection.close()`,...
 <code class="python">class ComplexOperation(Task)
    """Task that does very complex things"""
    
-   @tenacity.retry(retry=tenacity.retry_if_exception_type(OperationalError),
-                   stop=tenacity.stop_after_attempt(3),
-                   wait=tenacity.wait_exponential(),
+   @tenacity.retry(retry=retry_if_exception_type(OperationalError),
+                   stop=stop_after_attempt(3),
+                   wait=wait_exponential(),
                    after=close_connection_on_retry,
-                   before_sleep=tenacity.before_sleep_log(logger, 
-		                                                  logging.WARNING),
+                   before_sleep=before_sleep_log(logger, 
+		                                         logging.WARNING),
                    reraise=True)
     @transaction.atomic
 	def save(self, thing):
