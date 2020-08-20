@@ -101,7 +101,7 @@ HAProxy), and we ran to some issues.
 
 ## OperationalError <!-- .element class="hidden" -->
 
-```
+```python
 (2013, "Lost connection to MySQL server during query")
 ```
 
@@ -114,7 +114,7 @@ connection to MySQL server during query`.
 
 ## 2013 is not...
 
-```
+```python
 (2006, "MySQL server has gone away")
 ```
 
