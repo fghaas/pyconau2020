@@ -28,15 +28,16 @@ codepath. Instead, you can have something like this:
 
 ## Task definition example <!-- .element class="hidden" -->
 
-```python
-from celery import Task
+<pre class="stretch">
+<code class="python">from celery import Task
 
 class ComplexOperation(Task)
    """Task that does very complex things"""
 
    def run(self, **kwargs):
       # ... lots of interesting things
-```
+</code>
+</pre>
 
 <!-- Note -->
 So what this is is the example definition of a Celery **task,** that
@@ -49,18 +50,20 @@ can invoke this like so:
 
 ## Task delay example <!-- .element class="hidden" -->
 
-```python
-from .tasks import ComplexOperation
+<pre class="stretch">
+<code class="python">from .tasks import ComplexOperation
 
 def some_path(request):
-   """/some_path URL that receives a request for an asynchronous ComplexOperation"""
+   """/some_path URL that receives a request 
+   for an asynchronous ComplexOperation"""
    # ...
    
    # Asynchronously process ComplexOperation
    ComplexOperation.delay(pk=request.GET['id'])
 
    # ...
-```
+</code>
+</pre>
 
 <!-- Note -->
 Now what this means is that the code defined in `ComplexOperation`’s
@@ -140,22 +143,26 @@ then try to re-fetch. Like so:
 
 ## manage.py shell <!-- .element class="hidden" -->
 
-```python-doctest
-./manage.py shell
+<pre class="stretch">
+<code class="python-doctest">./manage.py shell
 [...]
 (InteractiveConsole)
 >>> from time import sleep
 >>> from django.contrib.auth import get_user_model
 >>> User = get_user_model()
 >>> me = User.objects.get(username='florian')
+
 >>> sleep(40)
 >>> me.refresh_from_db()
+
 >>> sleep(55)
 >>> me.refresh_from_db()
 Traceback (most recent call last):
 [...]
-OperationalError: (2013, 'Lost connection to MySQL server during query')
-```
+OperationalError:
+(2013, 'Lost connection to MySQL server during query')
+</code>
+</pre>
 
 <!-- Note -->
 So what happens here?
@@ -172,12 +179,13 @@ So what happens here?
 
 ## refresh_from_db() <!-- .element class="hidden" -->
 
-```python-doctest
->>> me.refresh_from_db()
+<pre class="stretch">
+<code class="python-doctest">>>> me.refresh_from_db()
 Traceback (most recent call last):
 [...]
 OperationalError: (2006, 'MySQL server has gone away')
-```
+</code>
+</pre>
 
 <!-- Note -->
 Note that if I run `refresh_from_db()` — or any other operation that
@@ -187,10 +195,11 @@ expected at this point), but I don’t get my database connection back:
 
 ## connection.close() <!-- .element class="hidden" -->
 
-```python-doctest
->>> from django.db import connection
+<pre class="stretch">
+<code class="python-doctest">>>> from django.db import connection
 >>> connection.close()
-```
+</code>
+</pre>
 
 <!-- Note -->
 What I have to do instead is *close* my `connection` first.
@@ -198,9 +207,10 @@ What I have to do instead is *close* my `connection` first.
 
 ## refresh_from_db() again <!-- .element class="hidden" -->
 
-```python-doctest
->>> me.refresh_from_db()
-```
+<pre class="stretch">
+<code class="python-doctest">>>> me.refresh_from_db()
+</code>
+</pre>
 
 <!-- Note -->
 And then, when I run anything else that requires a database query,
@@ -274,8 +284,8 @@ a long-running Celery task with database updates or queries at the
 beginning and end of something complicated, like so:
 
 
-```python
-from celery import Task
+<pre class="stretch">
+<code class="python">from celery import Task
 from model import Thing
 
 class ComplexOperation(Task)
@@ -285,7 +295,8 @@ class ComplexOperation(Task)
      thing = Thing.objects.get(pk=kwargs['pk'])
      do_something_really_long_and_complicated(thing)
      thing.save()
-```
+</code>
+</pre>
 
 <!-- Note -->
 In this case, 
@@ -320,8 +331,8 @@ two `OperationalError` instances:
   HAProxy. Let’s look at our code snippet with a few extra comments:
 
 
-```python
-from celery import Task
+<pre class="stretch">
+<code class="python">from celery import Task
 from model import Thing
 
 class ComplexOperation(Task)
@@ -329,18 +340,20 @@ class ComplexOperation(Task)
    
    def run(self, **kwargs):
      thing = Thing.objects.get(pk=kwargs['pk'])
-     # Right here (after the query is complete) is where HAproxy starts its
-     # timeout clock
+     # Right here (after the query is complete) 
+	 # is where HAproxy starts its timeout clock
 
-     # Suppose this takes 60 seconds (10 seconds longer than the default 
+     # Suppose this takes 60 seconds 
+	 # (10 seconds longer than the default 
 	 # HAProxy timeout)
 	 
      do_something_really_long_and_complicated(thing)
 
-     # Then by the time we get here, HAProxy has torn down the connection,
-     # and we get a 2013 error.
+     # Then by the time we get here, HAProxy has torn 
+	 # down the connection, and we get a 2013 error.
      thing.save()
-```
+</code>
+</pre>
 
 <!-- Note -->
 So now that we’ve identified the problem, how do we solve it? Well
@@ -376,8 +389,8 @@ here is _closing_ connections — _reopening_ them is automatic. For
 example:
 
 
-```python
-from django.db import connection
+<pre class="stretch">
+<code class="python">from django.db import connection
 from model import Thing
 
 class ComplexOperation(Task)
@@ -393,7 +406,8 @@ class ComplexOperation(Task)
 
      # Here, we just get a new connection.
      thing.save()
-```
+</code>
+</pre>
 
 
 ## Catch OperationalErrors
@@ -403,8 +417,8 @@ The other option is to just wing it, and catch the errors. Here’s a
 deliberately overtrivialized example:
 
 
-```python
-from django.db import connection
+<pre class="stretch">
+<code class="python">from django.db import connection
 from django.db.utils import OperationalError
 from model import Thing
 
@@ -413,23 +427,20 @@ class ComplexOperation(Task)
    
    def run(self, **kwargs):
      thing = Thing.objects.get(pk=kwargs['pk'])
-     # Right here (after the query is complete) 
-	 # is where HAproxy starts its timeout clock
 
-     # Suppose this takes 60 seconds.
      do_something_really_long_and_complicated(thing)
 
-     # Then by the time we get here, HAProxy has 
-	 # torn down the connection, and we get a 2013 
-	 # error, which we’ll want to catch.
      try:
        thing.save()
      except OperationalError:
-       # It’s now necessary to disconnect (and reconnect automatically),
-       # because if we don’t then all we do is turn a 2013 into a 2006.
+       # It’s now necessary to disconnect 
+	   # (and reconnect automatically),
+       # because if we don’t then all we do 
+	   # is turn a 2013 into a 2006.
        connection.close()
        thing.save()
-```
+</code>
+</pre>
 
 <!-- Note -->
 Now of course, you’d never _actually_ implement it this way, because
@@ -448,8 +459,8 @@ cluttering your code too much.
 
 ## Tenacity example (1) <!-- .element class="hidden" -->
 
-```python
-from django.db import connection, transaction
+<pre class="stretch">
+<code class="python">from django.db import connection, transaction
 from django.db.utils import OperationalError
 from model import Thing
 import tenacity
@@ -461,7 +472,8 @@ def close_connection_on_retry(retry_state):
     """Simple wrapper that accepts retry_state as a parameter,
     so that it can be used as a retry callback."""
     connection.close()
-```
+</code>
+</pre>
 
 <!-- Note -->
 So all you need to do is add a few imports from tenacity and a little
@@ -470,8 +482,8 @@ wrapper method around `connection.close()`,...
 
 ## Tenacity example (2) <!-- .element class="hidden" -->
 
-```python
-class ComplexOperation(Task)
+<pre class="stretch">
+<code class="python">class ComplexOperation(Task)
    """Task that does very complex things"""
    
    @tenacity.retry(retry=tenacity.retry_if_exception_type(OperationalError),
@@ -484,7 +496,8 @@ class ComplexOperation(Task)
     @transaction.atomic
 	def save(self, thing):
 		thing.save()
-```
+</code>
+</pre>
 
 <!-- Note -->
 So what this does is if you ever do run into an OperationalError, the
@@ -500,12 +513,13 @@ of that for you.
 
 ## Tenacity example (3) <!-- .element class="hidden" -->
 
-```python
-   def run(self, **kwargs):
+<pre class="stretch">
+<code class="python">def run(self, **kwargs):
      thing = Thing.objects.get(pk=kwargs['pk'])
      do_something_really_long_and_complicated()
 	 self.save(thing)
-```
+</code>
+</pre>
 
 <!-- Note -->
 And then once you’ve wrapped everything in those two decorators, a
