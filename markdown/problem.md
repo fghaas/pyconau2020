@@ -260,9 +260,9 @@ with a standalone MySQL server, or a Galera cluster using, say,
 
 ## MySQL wait_timeout vs HAProxy timeout client <!-- .element class="hidden" -->
 
-HAproxy `timeout client`: 50s
+**HAproxy** `timeout client`: **50s**
 
-MySQL `wait_timeout`: 28800s 
+**MySQL** `wait_timeout`: **28800s**
 
 <!-- Note -->
 MySQL's `wait_timeout` — the maximum length of a client session as
@@ -549,8 +549,8 @@ the variables you’ll want to set are...
 
 ## HAproxy settings <!-- .element class="hidden" -->
 
-* `timeout server`
-* `timeout client`
+* `timeout server 28800s`
+* `timeout client 28800s`
 
 <!-- Note -->
 You’ll probably want to set them to an identical value, which should
