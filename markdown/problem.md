@@ -35,14 +35,14 @@ class ComplexOperation(Task)
    """Task that does very complex things"""
 
    def run(self, **kwargs):
-      # ... lots of interesting things
+   # ... lots of interesting things
 </code>
 </pre>
 
 <!-- Note -->
 So what this is is the example definition of a Celery **task,** that
 is to say some functionality that is meant to run **asynchronously**
-(meaning, outside the request path). 
+(meaning, outside the request path).
 
 And then from your view (or management command, or whatever), you
 can invoke this like so:
@@ -54,14 +54,14 @@ can invoke this like so:
 <code class="python">from .tasks import ComplexOperation
 
 def some_path(request):
-   """/some_path URL that receives a request 
-   for an asynchronous ComplexOperation"""
-   # ...
-   
-   # Asynchronously process ComplexOperation
-   ComplexOperation.delay(pk=request.GET['id'])
+    """/some_path URL that receives a request 
+    for an asynchronous ComplexOperation"""
+    # ...
 
-   # ...
+    # Asynchronously process ComplexOperation
+    ComplexOperation.delay(pk=request.GET['id'])
+
+    # ...
 </code>
 </pre>
 
@@ -235,9 +235,9 @@ nothing breaks, but if I try for 55 seconds things blow up?
 
 | Config value | Default |
 | --- | --- |
-| `timeout connect` | *5s* <!-- .element class="fragment" --> | 
+| `timeout connect` | *5s* <!-- .element class="fragment" --> |
 |  `timeout check` | *5s* <!-- .element class="fragment" --> |
-| `timeout server` | *50s* <!-- .element class="fragment" --> | 
+| `timeout server` | *50s* <!-- .element class="fragment" --> |
 | `timeout client` | *50s* <!-- .element class="fragment" --> |
 
 <!-- Note -->
@@ -290,17 +290,17 @@ beginning and end of something complicated, like so:
 from model import Thing
 
 class ComplexOperation(Task)
-   """Task that does very complex things"""
-   
-   def run(self, **kwargs):
-     thing = Thing.objects.get(pk=kwargs['pk'])
-     do_something_really_long_and_complicated(thing)
-     thing.save()
+    """Task that does very complex things"""
+
+    def run(self, **kwargs):
+      thing = Thing.objects.get(pk=kwargs['pk'])
+      do_something_really_long_and_complicated(thing)
+      thing.save()
 </code>
 </pre>
 
 <!-- Note -->
-In this case, 
+In this case,
 
 * we retrieve data from the database into memory, populating our
   `thing` object,
@@ -337,22 +337,22 @@ two `OperationalError` instances:
 from model import Thing
 
 class ComplexOperation(Task)
-   """Task that does very complex things"""
-   
-   def run(self, **kwargs):
-     thing = Thing.objects.get(pk=kwargs['pk'])
-     # Right here (after the query is complete) 
-     # is where HAproxy starts its timeout clock
+    """Task that does very complex things"""
 
-     # Suppose this takes 60 seconds 
-     # (10 seconds longer than the default 
-     # HAProxy timeout)
-     
-     do_something_really_long_and_complicated(thing)
+    def run(self, **kwargs):
+      thing = Thing.objects.get(pk=kwargs['pk'])
+      # Right here (after the query is complete) 
+      # is where HAproxy starts its timeout clock
 
-     # Then by the time we get here, HAProxy has torn 
-     # down the connection, and we get a 2013 error.
-     thing.save()
+      # Suppose this takes 60 seconds 
+      # (10 seconds longer than the default 
+      # HAProxy timeout)
+
+      do_something_really_long_and_complicated(thing)
+
+      # Then by the time we get here, HAProxy has torn 
+      # down the connection, and we get a 2013 error.
+      thing.save()
 </code>
 </pre>
 
@@ -362,7 +362,7 @@ that depends greatly on the following questions:
 
 * Are you the developer, meaning you can fix this in code, but you
   can’t change much in the infrastructure?
-  
+
 * Or are you a systems person, who can control all aspects of the
   infrastructure, but you don’t have leverage over the code?
 
@@ -395,18 +395,18 @@ example:
 from model import Thing
 
 class ComplexOperation(Task)
-   """Task that does very complex things"""
-   
-   def run(self, **kwargs):
-     thing = Thing.objects.get(pk=kwargs['pk'])
-     # Close connection immediately
-     connection.close()
+    """Task that does very complex things"""
 
-     # Suppose this takes 60 seconds.
-     do_something_really_long_and_complicated(thing)
+    def run(self, **kwargs):
+      thing = Thing.objects.get(pk=kwargs['pk'])
+      # Close connection immediately
+      connection.close()
 
-     # Here, we just get a new connection.
-     thing.save()
+      # Suppose this takes 60 seconds.
+      do_something_really_long_and_complicated(thing)
+
+      # Here, we just get a new connection.
+      thing.save()
 </code>
 </pre>
 
@@ -424,22 +424,22 @@ from django.db.utils import OperationalError
 from model import Thing
 
 class ComplexOperation(Task)
-   """Task that does very complex things"""
-   
-   def run(self, **kwargs):
-     thing = Thing.objects.get(pk=kwargs['pk'])
+    """Task that does very complex things"""
 
-     do_something_really_long_and_complicated(thing)
+    def run(self, **kwargs):
+      thing = Thing.objects.get(pk=kwargs['pk'])
 
-     try:
-       thing.save()
-     except OperationalError:
-       # It’s now necessary to disconnect 
-       # (and reconnect automatically),
-       # because if we don’t then all we do 
-       # is turn a 2013 into a 2006.
-       connection.close()
-       thing.save()
+      do_something_really_long_and_complicated(thing)
+
+      try:
+        thing.save()
+      except OperationalError:
+        # It’s now necessary to disconnect
+        # (and reconnect automatically),
+        # because if we don’t then all we do
+        # is turn a 2013 into a 2006.
+        connection.close()
+        thing.save()
 </code>
 </pre>
 
@@ -492,15 +492,15 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_ex
 
 <pre class="stretch">
 <code class="python">class ComplexOperation(Task)
-   """Task that does very complex things"""
-   
-   @tenacity.retry(retry=retry_if_exception_type(OperationalError),
-                   stop=stop_after_attempt(3),
-                   wait=wait_exponential(),
-                   after=close_connection_on_retry,
-                   before_sleep=before_sleep_log(logger, 
-                                                 logging.WARNING),
-                   reraise=True)
+    """Task that does very complex things"""
+
+    @tenacity.retry(retry=retry_if_exception_type(OperationalError),
+                    stop=stop_after_attempt(3),
+                    wait=wait_exponential(),
+                    after=close_connection_on_retry,
+                    before_sleep=before_sleep_log(logger, 
+                                                  logging.WARNING),
+                    reraise=True)
     @transaction.atomic
     def save(self, thing):
         thing.save()
@@ -523,9 +523,9 @@ of that for you.
 
 <pre class="stretch">
 <code class="python">def run(self, **kwargs):
-     thing = Thing.objects.get(pk=kwargs['pk'])
-     do_something_really_long_and_complicated()
-     self.save(thing)
+    thing = Thing.objects.get(pk=kwargs['pk'])
+    do_something_really_long_and_complicated()
+    self.save(thing)
 </code>
 </pre>
 
@@ -560,10 +560,10 @@ then ample room to spare.
 The maximum reasonable value that you can set here is that of your
 backend server’s `wait_timeout` configuration variable, [which
 defaults to 8
-hours](https://mariadb.com/kb/en/server-system-variables/#wait_timeout). 
+hours](https://mariadb.com/kb/en/server-system-variables/#wait_timeout).
 
 
-## Beware 
+## Beware
 
 MySQL time values use *seconds.*
 
