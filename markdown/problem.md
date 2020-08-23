@@ -518,13 +518,17 @@ for throwing the `OperationalError` up the stack if it does occur
 three times, or for formatting a nice log message. Tenacity does all
 of that for you.
 
+*Again, the `@tenacity.retry()` decorator is deliberately incorrect
+to make the slide a bit clearer; given the `import` statement from the
+previous slide the decorator should just read `@retry()`.*
+
 
 ## Tenacity example (3) <!-- .element class="hidden" -->
 
 <pre class="stretch">
 <code class="python">def run(self, **kwargs):
     thing = Thing.objects.get(pk=kwargs['pk'])
-    do_something_really_long_and_complicated()
+    do_something_really_long_and_complicated(thing)
     self.save(thing)
 </code>
 </pre>
