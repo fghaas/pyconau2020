@@ -53,6 +53,7 @@ body:after {
 
 .reveal .caption {
   position: absolute;
+  text-align: right;
   right: 0;
   bottom: 0;
   font-size: small;
