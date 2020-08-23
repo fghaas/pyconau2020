@@ -16,10 +16,6 @@ body:after {
   display: none;
 }
 
-.reveal .hidden {
-  display: none;
-}
-
 .reveal .overview .hidden {
   display: inherit;
 }
@@ -53,4 +49,11 @@ body:after {
 
 .reveal .fragment .current-fragment {
   opacity: 1 !important;
+}
+
+.reveal .caption {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  font-size: small;
 }
