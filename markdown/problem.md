@@ -178,6 +178,15 @@ So what happens here?
   error.
 
 
+Silly indeed. I said “long-running operation *in the database,”* as
+opposed to just “long-running operation”. 
+
+In fact, I am of course talking about operations that take a long time
+**between** database interactions, as you’ll see shortly.
+
+Apologies. Moving on...
+
+
 ## refresh_from_db() <!-- .element class="hidden" -->
 
 <pre class="stretch">
