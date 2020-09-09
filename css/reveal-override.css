@@ -28,10 +28,33 @@ body:after {
   border: none;
 }
 
+.reveal img, .reveal iframe {
+  border: none !important;
+}
+
+.reveal .inline {
+  display: inline !important;
+}
+
+.reveal img.inline {
+  box-shadow: none !important;
+  height: 1em;
+  width: auto;
+  margin: 0 !important;
+}
+
 .reveal .fragment .visible {
   opacity: 0.4 !important;
 }
 
 .reveal .fragment .current-fragment {
   opacity: 1 !important;
+}
+
+.reveal .caption {
+  position: absolute;
+  text-align: right;
+  right: 0;
+  bottom: 0;
+  font-size: small;
 }

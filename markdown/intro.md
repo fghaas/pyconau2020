@@ -3,9 +3,11 @@
 
 * * *
 
-Florian Haas | [@xahteiwi](https://twitter.com/xahteiwi)
+Florian Haas [@xahteiwi](https://twitter.com/xahteiwi) ![City Network logo](images/citynetwork-logo.svg) <!-- .element class="inline" --> [City Network](https://www.citynetwork.eu/)
 
-PyCon AU 2020 | 2020-09-04
+PyCon AU 2020
+
+2020-09-04
 
 <!-- Note -->
 Hello dear PyCon AU people, I’m here to talk about an issue that my

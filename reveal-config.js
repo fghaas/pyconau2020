@@ -9,7 +9,7 @@ Reveal.initialize({
     center: true,
     showNotes: true,
 
-    transition: 'fade',
+    transition: 'none',
 
     totalTime: 23*60,
 
